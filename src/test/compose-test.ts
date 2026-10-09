@@ -91,6 +91,16 @@ describe("composition expansion", () => {
         expect(() => ComposeNodeFromInput("a", nodes)).to.throw(CycleError);
     });
 
+    it("rejects references into the node's own head", () => {
+        let nodes = new Map<string, CompositionInputNode[]>();
+
+        // Composing `a` would compose `a` again to find `a/x`.
+        AddChild(nodes, "a", "x", "leaf");
+        AddChild(nodes, "a", "y", "a/x");
+
+        expect(() => ComposeNodeFromInput("a", nodes)).to.throw(CycleError);
+    });
+
     it("accepts references into a sibling's children without a cycle", () => {
         let nodes = new Map<string, CompositionInputNode[]>();
 
