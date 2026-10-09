@@ -88,7 +88,7 @@ export class IfcxLayerStackBuilder
     // Returns the layers `activeLayer` depends on, in order, each once. The
     // caller adds them to the layer set; a nested call must not, or its
     // layers would be added once there and again by every caller above it.
-    private async SatisfyDependencies(activeLayer: IfcxFile, placed: Map<string, boolean>)
+    private async ReturnRecursiveDependencies(activeLayer: IfcxFile, placed: Set<string>)
     {
         let pending: IfcxFile[] = [];
         for (const impt of activeLayer.imports) {
@@ -100,13 +100,13 @@ export class IfcxLayerStackBuilder
                     return layer;
                 }
                 pending.push(layer);
-                placed.set(impt.uri, true);
+                placed.add(impt.uri);
             }
         }
         let temp: IfcxFile[] = [];
         for (const layer of pending) {
             temp.push(layer);
-            let layers = await this.SatisfyDependencies(layer, placed);
+            let layers = await this.ReturnRecursiveDependencies(layer, placed);
             if (layers instanceof Error)
             {
                 return layers;
@@ -126,9 +126,9 @@ export class IfcxLayerStackBuilder
         }
 
         let layerSet: IfcxFile[] = [activeLayer]; // TODO: remove
-        let placed = new Map<string, boolean>();
-        placed.set(activeLayer.header.id, true); // TODO: remove
-        let result = await this.SatisfyDependencies(activeLayer, placed);
+        let placed = new Set<string>();
+        placed.add(activeLayer.header.id); // TODO: remove
+        let result = await this.ReturnRecursiveDependencies(activeLayer, placed);
         if (result instanceof Error)
         {
             return result;
